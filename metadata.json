@@ -1,0 +1,6 @@
+{
+  "name": "Professional Portfolio & GitHub Showcase",
+  "description": "A clean, understated professional portfolio displaying resume summary, work experience, and live repositories from connected GitHub profiles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
