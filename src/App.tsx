@@ -7,11 +7,11 @@ import { Header } from './components/Header';
 import { HeroSummary } from './components/HeroSummary';
 import { RepoDetailModal } from './components/RepoDetailModal';
 import { DEFAULT_PORTFOLIO } from './data/defaultPortfolio';
+import { syncProfiles } from './utils/github';
 import type {
   GitHubProfile,
   GitHubProfileError,
   GitHubRepo,
-  GitHubSyncResponse,
   PortfolioData,
 } from './types/portfolio';
 
@@ -51,6 +51,7 @@ export default function App() {
 
   // Load persisted portfolio from backend on mount if available
   useEffect(() => {
+    if (__PAGES__) return;
     let cancelled = false;
     fetch('/api/portfolio')
       .then((res) => (res.ok ? res.json() : null))
@@ -94,25 +95,8 @@ export default function App() {
       setGithubGlobalError(null);
 
       try {
-        const params = new URLSearchParams({
-          usernames: usernames.join(','),
-        });
-        if (forceRefresh) {
-          params.set('refresh', 'true');
-        }
-
-        const headers: Record<string, string> = {};
         const activeToken = tokenOverride !== undefined ? tokenOverride : githubToken;
-        if (activeToken) {
-          headers['x-github-token'] = activeToken;
-        }
-
-        const res = await fetch(`/api/github/profiles?${params.toString()}`, { headers });
-        const payload = (await res.json()) as GitHubSyncResponse & { error?: string };
-
-        if (!res.ok) {
-          throw new Error(payload.error || 'Unable to sync GitHub repositories.');
-        }
+        const payload = await syncProfiles(usernames, forceRefresh, activeToken);
 
         setProfiles(payload.profiles || []);
         setRepos(payload.repos || []);
@@ -140,9 +124,6 @@ export default function App() {
   };
 
   const handleSavePortfolio = async (updated: PortfolioData, token: string) => {
-    setPortfolio(updated);
-    setGithubToken(token);
-
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
       if (token) {
@@ -150,18 +131,24 @@ export default function App() {
       } else {
         localStorage.removeItem(TOKEN_STORAGE_KEY);
       }
-    } catch {
-      // ignore storage errors
+    } catch (error) {
+      if (__PAGES__) throw new Error('Unable to save changes in this browser. Check your storage settings.', { cause: error });
+      console.error('Unable to save changes in browser storage:', error);
     }
 
-    try {
-      await fetch('/api/portfolio', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      });
-    } catch {
-      // localStorage already updated
+    setPortfolio(updated);
+    setGithubToken(token);
+
+    if (!__PAGES__) {
+      try {
+        await fetch('/api/portfolio', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        });
+      } catch {
+        // localStorage already updated
+      }
     }
 
     await syncGitHubProfiles(updated.github.usernames, true, token);
