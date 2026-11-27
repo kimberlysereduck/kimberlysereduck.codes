@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, GitFork, Star, X } from 'lucide-react';
 import type { GitHubRepo } from '../types/portfolio';
+import { fetchReadme } from '../utils/github';
 
 interface RepoDetailModalProps {
   repo: GitHubRepo | null;
@@ -31,25 +32,10 @@ export function RepoDetailModal({ repo, githubToken, onClose }: RepoDetailModalP
     setReadmeError(null);
     setReadmeLoading(true);
 
-    const headers: Record<string, string> = {};
-    if (githubToken) {
-      headers['x-github-token'] = githubToken;
-    }
-
-    fetch(
-      `/api/github/readme/${encodeURIComponent(repo.ownerLogin)}/${encodeURIComponent(repo.name)}`,
-      { headers }
-    )
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'Unable to load README');
-        }
-        return data;
-      })
-      .then((data) => {
+    fetchReadme(repo.ownerLogin, repo.name, githubToken || '')
+      .then((content) => {
         if (!cancelled) {
-          setReadme(data.content || '');
+          setReadme(content);
           setReadmeLoading(false);
         }
       })

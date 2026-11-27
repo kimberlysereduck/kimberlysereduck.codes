@@ -333,7 +333,7 @@ export function GitHubProjectsSection({
                   </span>
                 </div>
 
-                <span className="font-mono tabular-nums text-zinc-400">
+                <span className="font-mono tabular-nums text-zinc-600">
                   Updated {formatRepoDate(repo.pushed_at || repo.updated_at)}
                 </span>
               </div>

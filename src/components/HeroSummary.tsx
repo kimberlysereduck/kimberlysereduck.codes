@@ -58,7 +58,9 @@ export function HeroSummary({
           <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm no-print">
             {portfolio.resumePdfUrl && (
               <a
-                href={portfolio.resumePdfUrl}
+                href={portfolio.resumePdfUrl.startsWith('/assets/')
+                  ? `${__BASE_PATH__}${portfolio.resumePdfUrl.slice(1)}`
+                  : portfolio.resumePdfUrl}
                 download="Kimberly-Sereduck-Resume.pdf"
                 className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-white bg-zinc-950 hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
               >

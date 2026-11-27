@@ -47,6 +47,7 @@ export function EditorDrawer({
   const [resumeRawText, setResumeRawText] = useState('');
   const [parseFeedback, setParseFeedback] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -55,6 +56,7 @@ export function EditorDrawer({
       setTokenDraft(githubToken);
       setParseFeedback(null);
       setUsernameError(null);
+      setSaveError(null);
     }
   }, [isOpen, initialTab, portfolio, githubToken]);
 
@@ -244,9 +246,12 @@ export function EditorDrawer({
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError(null);
     try {
       await onSavePortfolio(draft, tokenDraft.trim());
       onClose();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Unable to save changes.');
     } finally {
       setSaving(false);
     }
@@ -325,6 +330,12 @@ export function EditorDrawer({
 
         {/* Drawer Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {__PAGES__ && (
+            <p className="text-sm text-zinc-700">
+              Changes are saved only in this browser and are not published to other visitors.
+            </p>
+          )}
+          {saveError && <p role="alert" className="text-sm text-red-700">{saveError}</p>}
           {parseFeedback && (
             <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
               {parseFeedback}
@@ -506,11 +517,11 @@ export function EditorDrawer({
 
               <div className="pt-6 border-t border-zinc-200">
                 <label className="block text-xs font-medium text-zinc-700 mb-1">
-                  Optional GitHub Personal Access Token (Browser Session Only)
+                  Optional GitHub Personal Access Token
                 </label>
                 <p className="text-xs text-zinc-500 mb-2">
-                  Public repositories load without a token. Only provide a read-only token if
-                  you hit GitHub&apos;s unauthenticated 60 requests/hour limit.
+                  Public repositories load without a token. A token is stored in this browser&apos;s
+                  local storage until removed; use a read-only token only if needed.
                 </p>
                 <input
                   type="password"
